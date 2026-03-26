@@ -1,9 +1,11 @@
-"""Авторизация по номеру телефона: отправка кода и верификация"""
+"""Авторизация по номеру телефона: отправка кода через SMS.ru и верификация"""
 import json
 import os
 import random
 import string
 import secrets
+import urllib.request
+import urllib.parse
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from datetime import datetime, timedelta
@@ -30,12 +32,41 @@ def normalize_phone(phone: str) -> str:
         digits = '7' + digits[1:]
     return '+' + digits
 
+def send_sms(phone: str, code: str) -> dict:
+    """Отправка SMS через sms.ru API"""
+    api_id = os.environ.get('SMSRU_API_ID', '')
+    if not api_id:
+        return {'ok': False, 'error': 'SMS API не настроен'}
+
+    # sms.ru принимает номер без +
+    phone_clean = phone.lstrip('+')
+    text = f'Ваш код Волна: {code}. Никому не сообщайте код.'
+
+    params = urllib.parse.urlencode({
+        'api_id': api_id,
+        'to': phone_clean,
+        'msg': text,
+        'json': 1,
+    })
+
+    url = f'https://sms.ru/sms/send?{params}'
+    try:
+        with urllib.request.urlopen(url, timeout=10) as resp:
+            data = json.loads(resp.read().decode())
+            status_code = data.get('status_code', 0)
+            # status_code 100 = успех
+            if data.get('status') == 'OK' and status_code == 100:
+                return {'ok': True}
+            else:
+                return {'ok': False, 'error': f'SMS ошибка: {data.get("status_text", status_code)}'}
+    except Exception as e:
+        return {'ok': False, 'error': f'SMS недоступен: {str(e)}'}
+
 def handler(event: dict, context) -> dict:
     """Обработчик авторизации: send_code, verify_code, me, logout"""
     if event.get('httpMethod') == 'OPTIONS':
         return {'statusCode': 200, 'headers': CORS, 'body': ''}
 
-    method = event.get('httpMethod', 'POST')
     body = json.loads(event.get('body') or '{}')
     action = body.get('action') or (event.get('queryStringParameters') or {}).get('action', '')
     token = (event.get('headers') or {}).get('X-Session-Token', '')
@@ -73,10 +104,21 @@ def handler(event: dict, context) -> dict:
         if not phone_raw:
             conn.close()
             return json_response({'error': 'Укажите номер телефона'}, 400)
+
         phone = normalize_phone(phone_raw)
         if len(phone) < 11:
             conn.close()
             return json_response({'error': 'Неверный формат номера'}, 400)
+
+        # Защита от спама: не более 1 кода за 60 секунд
+        cur.execute("""
+            SELECT COUNT(*) AS cnt FROM auth_codes
+            WHERE phone = %s AND created_at > NOW() - INTERVAL '60 seconds'
+        """, (phone,))
+        row = cur.fetchone()
+        if row and int(row['cnt']) >= 1:
+            conn.close()
+            return json_response({'error': 'Подождите 60 секунд перед повторной отправкой'}, 429)
 
         code = ''.join(random.choices(string.digits, k=5))
         expires_at = datetime.now() + timedelta(minutes=10)
@@ -88,9 +130,14 @@ def handler(event: dict, context) -> dict:
         conn.commit()
         conn.close()
 
-        # В prod здесь была бы отправка SMS. Сейчас возвращаем код в ответе для демо.
-        return json_response({'ok': True, 'phone': phone, 'demo_code': code,
-                              'message': 'Код отправлен (демо-режим: код в ответе)'})
+        sms_result = send_sms(phone, code)
+        if not sms_result['ok']:
+            return json_response({
+                'ok': False,
+                'error': sms_result.get('error', 'Не удалось отправить SMS')
+            }, 500)
+
+        return json_response({'ok': True, 'phone': phone})
 
     # Верификация кода
     if action == 'verify_code':
@@ -116,7 +163,6 @@ def handler(event: dict, context) -> dict:
 
         cur.execute("UPDATE auth_codes SET used = TRUE WHERE id = %s", (code_row['id'],))
 
-        # Находим или создаём пользователя
         cur.execute("SELECT id, display_name, username, avatar_initials FROM users WHERE phone = %s", (phone,))
         user = cur.fetchone()
         is_new = False
@@ -133,7 +179,6 @@ def handler(event: dict, context) -> dict:
             """, (username, display_name, phone, initials))
             user = cur.fetchone()
 
-        # Создаём сессию на 30 дней
         token_val = secrets.token_hex(32)
         expires = datetime.now() + timedelta(days=30)
         cur.execute("""

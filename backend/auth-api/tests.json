@@ -1,21 +1,21 @@
 {
   "tests": [
     {
-      "name": "Send code",
-      "method": "POST",
-      "path": "/",
-      "body": {"action": "send_code", "phone": "+79001234567"},
-      "expectedStatus": 200,
-      "expectedBody": {"ok": true},
-      "bodyMatcher": "partial"
-    },
-    {
-      "name": "Me without token",
+      "name": "Me without token returns 401",
       "method": "POST",
       "path": "/",
       "body": {"action": "me"},
       "expectedStatus": 401,
       "expectedBody": {"error": "Нет токена"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Logout without token returns ok",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "logout"},
+      "expectedStatus": 200,
+      "expectedBody": {"ok": true},
       "bodyMatcher": "partial"
     }
   ]

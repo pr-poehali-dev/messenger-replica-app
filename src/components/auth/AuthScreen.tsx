@@ -15,8 +15,6 @@ export default function AuthScreen({ onAuth }: AuthScreenProps) {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [demoCode, setDemoCode] = useState("");
-  const [isNew, setIsNew] = useState(false);
 
   const handlePhoneSubmit = async () => {
     if (!phone.trim()) return;
@@ -27,7 +25,6 @@ export default function AuthScreen({ onAuth }: AuthScreenProps) {
     if (res.error) {
       setError(res.error);
     } else {
-      setDemoCode(res.demo_code || "");
       setStep("code");
     }
   };
@@ -43,7 +40,6 @@ export default function AuthScreen({ onAuth }: AuthScreenProps) {
       return;
     }
     if (res.is_new) {
-      setIsNew(true);
       setStep("name");
     } else if (res.token && res.user) {
       saveToken(res.token);
@@ -149,17 +145,15 @@ export default function AuthScreen({ onAuth }: AuthScreenProps) {
             <p className="text-center text-sm text-[hsl(var(--muted-foreground))]">
               Код отправлен на <span className="text-white font-medium">{phone}</span>
             </p>
-            {demoCode && (
-              <div
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm"
-                style={{ background: "hsl(var(--primary) / 0.15)", border: "1px solid hsl(var(--primary) / 0.3)" }}
-              >
-                <Icon name="Info" size={16} style={{ color: "var(--tg-blue)" }} />
-                <span className="text-[hsl(var(--foreground))]">
-                  Демо-код: <strong>{demoCode}</strong>
-                </span>
-              </div>
-            )}
+            <div
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm"
+              style={{ background: "hsl(var(--muted))", border: "1px solid hsl(var(--border))" }}
+            >
+              <Icon name="MessageSquare" size={16} className="text-[hsl(var(--muted-foreground))]" />
+              <span className="text-[hsl(var(--muted-foreground))]">
+                SMS придёт в течение 1 минуты
+              </span>
+            </div>
             <div
               className="flex items-center gap-3 px-4 py-3 rounded-xl"
               style={{ background: "hsl(var(--muted))", border: "1px solid hsl(var(--border))" }}
