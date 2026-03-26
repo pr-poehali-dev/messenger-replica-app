@@ -28,17 +28,25 @@ export interface ApiMessage {
 }
 
 export async function fetchChats(): Promise<ApiChat[]> {
-  const res = await fetch(`${BASE_URL}?action=chats`, { headers: authHeaders() });
-  if (!res.ok) return [];
-  const data = await res.json();
-  return data.chats || [];
+  try {
+    const res = await fetch(`${BASE_URL}?action=chats`, { headers: authHeaders() });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.chats || [];
+  } catch {
+    return [];
+  }
 }
 
 export async function fetchMessages(chatId: number): Promise<ApiMessage[]> {
-  const res = await fetch(`${BASE_URL}?action=messages&chat_id=${chatId}`, { headers: authHeaders() });
-  if (!res.ok) return [];
-  const data = await res.json();
-  return data.messages || [];
+  try {
+    const res = await fetch(`${BASE_URL}?action=messages&chat_id=${chatId}`, { headers: authHeaders() });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.messages || [];
+  } catch {
+    return [];
+  }
 }
 
 export async function sendMessage(chatId: number, text: string): Promise<ApiMessage> {

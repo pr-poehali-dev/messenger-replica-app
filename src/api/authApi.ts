@@ -31,12 +31,16 @@ export interface AuthUser {
 }
 
 export async function sendCode(phone: string): Promise<{ ok: boolean; demo_code?: string; error?: string }> {
-  const res = await fetch(AUTH_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'send_code', phone }),
-  });
-  return res.json();
+  try {
+    const res = await fetch(AUTH_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'send_code', phone }),
+    });
+    return res.json();
+  } catch {
+    return { ok: false, error: 'Нет соединения с сервером' };
+  }
 }
 
 export async function verifyCode(phone: string, code: string, name?: string): Promise<{
@@ -46,33 +50,45 @@ export async function verifyCode(phone: string, code: string, name?: string): Pr
   is_new?: boolean;
   error?: string;
 }> {
-  const res = await fetch(AUTH_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'verify_code', phone, code, name }),
-  });
-  return res.json();
+  try {
+    const res = await fetch(AUTH_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'verify_code', phone, code, name }),
+    });
+    return res.json();
+  } catch {
+    return { ok: false, error: 'Нет соединения с сервером' };
+  }
 }
 
 export async function getMe(): Promise<AuthUser | null> {
   const token = getToken();
   if (!token) return null;
-  const res = await fetch(AUTH_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Session-Token': token },
-    body: JSON.stringify({ action: 'me' }),
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data.user || null;
+  try {
+    const res = await fetch(AUTH_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Session-Token': token },
+      body: JSON.stringify({ action: 'me' }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.user || null;
+  } catch {
+    return null;
+  }
 }
 
 export async function logout() {
-  await fetch(AUTH_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Session-Token': getToken() },
-    body: JSON.stringify({ action: 'logout' }),
-  });
+  try {
+    await fetch(AUTH_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Session-Token': getToken() },
+      body: JSON.stringify({ action: 'logout' }),
+    });
+  } catch {
+    // игнорируем ошибку сети при выходе
+  }
   clearToken();
 }
 
