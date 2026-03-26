@@ -30,7 +30,7 @@ export interface AuthUser {
   avatar_initials: string;
 }
 
-export async function sendCode(phone: string): Promise<{ ok: boolean; demo_code?: string; error?: string }> {
+export async function sendCode(phone: string): Promise<{ ok: boolean; demo_code?: string; demo?: boolean; error?: string }> {
   try {
     const res = await fetch(AUTH_URL, {
       method: 'POST',

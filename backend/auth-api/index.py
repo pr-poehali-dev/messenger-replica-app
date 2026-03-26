@@ -157,10 +157,13 @@ def handler(event: dict, context) -> dict:
         conn.commit()
         conn.close()
 
+        # Пробуем отправить SMS, при ошибке возвращаем демо-код
         sms_result = send_sms(phone, code)
-        if not sms_result['ok']:
-            return json_response({'ok': False, 'error': sms_result.get('error', 'Не удалось отправить SMS')}, 500)
-        return json_response({'ok': True, 'phone': phone})
+        if sms_result['ok']:
+            return json_response({'ok': True, 'phone': phone})
+        else:
+            return json_response({'ok': True, 'phone': phone, 'demo_code': code,
+                                  'demo': True, 'sms_error': sms_result.get('error')})
 
     # Верификация кода
     if action == 'verify_code':
