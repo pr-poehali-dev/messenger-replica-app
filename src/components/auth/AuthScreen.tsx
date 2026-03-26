@@ -115,7 +115,7 @@ export default function AuthScreen({ onAuth }: AuthScreenProps) {
             В
           </div>
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-white">Волна</h1>
+            <h1 className="text-2xl font-bold text-white">Мини</h1>
             <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1">
               {step === "phone" && "Введите номер телефона"}
               {step === "code" && "Введите код подтверждения"}

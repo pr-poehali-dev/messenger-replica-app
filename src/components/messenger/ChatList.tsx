@@ -43,7 +43,7 @@ export default function ChatList({ chats, selectedId, onSelect, onMenuOpen, onNe
         >
           <Icon name="Menu" size={20} />
         </button>
-        <h1 className="flex-1 text-white font-semibold text-lg">Волна</h1>
+        <h1 className="flex-1 text-white font-semibold text-lg">Мини</h1>
         <button
           onClick={onNewChat}
           className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors text-[hsl(var(--muted-foreground))] hover:text-white"

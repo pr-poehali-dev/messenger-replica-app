@@ -87,7 +87,7 @@ export default function Sidebar({ isOpen, onClose, user, onLogout }: SidebarProp
             </span>
           </button>
           <p className="text-[hsl(var(--muted-foreground))] text-xs text-center py-3">
-            Волна v1.0.0
+            Мини v1.0.0
           </p>
         </div>
       </div>

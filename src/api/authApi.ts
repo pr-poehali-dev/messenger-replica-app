@@ -1,7 +1,7 @@
 const AUTH_URL = 'https://functions.poehali.dev/5bfea82b-0665-43a1-b3b9-96d1949bdd8f';
 const CHATS_URL = 'https://functions.poehali.dev/f6cae849-85b2-4c0b-8164-397266e688b3';
 
-const TOKEN_KEY = 'волна_token';
+const TOKEN_KEY = 'мини_token';
 
 export function getToken(): string {
   return localStorage.getItem(TOKEN_KEY) || '';
