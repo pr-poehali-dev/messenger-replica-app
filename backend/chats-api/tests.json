@@ -1,0 +1,34 @@
+{
+  "tests": [
+    {
+      "name": "GET chats list",
+      "method": "GET",
+      "path": "/",
+      "queryStringParameters": {"action": "chats"},
+      "headers": {"X-User-Id": "1"},
+      "expectedStatus": 200,
+      "expectedBody": {"chats": []},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "GET messages for chat 1",
+      "method": "GET",
+      "path": "/",
+      "queryStringParameters": {"action": "messages", "chat_id": "1"},
+      "headers": {"X-User-Id": "1"},
+      "expectedStatus": 200,
+      "expectedBody": {"messages": []},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "POST send message",
+      "method": "POST",
+      "path": "/",
+      "headers": {"X-User-Id": "1", "Content-Type": "application/json"},
+      "body": {"action": "send", "chat_id": 1, "text": "Тест сообщение"},
+      "expectedStatus": 200,
+      "expectedBody": {"is_out": true},
+      "bodyMatcher": "partial"
+    }
+  ]
+}
