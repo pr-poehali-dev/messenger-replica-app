@@ -110,9 +110,18 @@ export default function AuthScreen({ onAuth }: AuthScreenProps) {
 
         {/* Logo */}
         <div className="flex flex-col items-center gap-3">
-          <div className="w-20 h-20 rounded-full flex items-center justify-center text-white text-3xl font-bold"
-            style={{ background: "linear-gradient(135deg, var(--tg-blue), #1a6fa8)" }}>
-            В
+          <div className="w-20 h-20 flex items-center justify-center">
+            <svg viewBox="0 0 100 100" width="80" height="80" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="logo-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#2AABEE"/>
+                  <stop offset="100%" stopColor="#1A6FA8"/>
+                </linearGradient>
+              </defs>
+              <rect width="100" height="100" rx="22" fill="url(#logo-bg)"/>
+              <path d="M18 50 L82 22 L58 78 L48 58 Z" fill="white" opacity="0.95"/>
+              <path d="M48 58 L82 22 L55 65 Z" fill="white" opacity="0.6"/>
+            </svg>
           </div>
           <div className="text-center">
             <h1 className="text-2xl font-bold text-white">Мини</h1>

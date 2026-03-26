@@ -43,7 +43,20 @@ export default function ChatList({ chats, selectedId, onSelect, onMenuOpen, onNe
         >
           <Icon name="Menu" size={20} />
         </button>
-        <h1 className="flex-1 text-white font-semibold text-lg">Мини</h1>
+        <div className="flex items-center gap-2 flex-1">
+          <svg viewBox="0 0 100 100" width="26" height="26" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="hdr-logo" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#2AABEE"/>
+                <stop offset="100%" stopColor="#1A6FA8"/>
+              </linearGradient>
+            </defs>
+            <rect width="100" height="100" rx="22" fill="url(#hdr-logo)"/>
+            <path d="M18 50 L82 22 L58 78 L48 58 Z" fill="white" opacity="0.95"/>
+            <path d="M48 58 L82 22 L55 65 Z" fill="white" opacity="0.6"/>
+          </svg>
+          <h1 className="text-white font-semibold text-lg">Мини</h1>
+        </div>
         <button
           onClick={onNewChat}
           className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors text-[hsl(var(--muted-foreground))] hover:text-white"

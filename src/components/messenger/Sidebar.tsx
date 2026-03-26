@@ -42,17 +42,19 @@ export default function Sidebar({ isOpen, onClose, user, onLogout }: SidebarProp
           className="p-5 pt-10 pb-4 flex flex-col gap-3"
           style={{ background: "linear-gradient(135deg, #1a3a5c 0%, #0f2a45 100%)" }}
         >
-          <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
             <div
-              className="w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-xl"
-              style={{ background: "var(--tg-blue)" }}
+              className="w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-xl flex-shrink-0"
+              style={{ background: "hsl(222 18% 28%)" }}
             >
               {initials}
             </div>
-          </div>
-          <div>
-            <p className="text-white font-semibold text-base">{user?.display_name || "Профиль"}</p>
-            <p className="text-white/60 text-sm">{user?.phone || user?.username || ""}</p>
+            <div className="min-w-0">
+              <p className="text-white font-semibold text-base truncate">{user?.display_name || "Профиль"}</p>
+              <p className="text-white/60 text-sm truncate">
+                {user?.username ? `@${user.username}` : user?.phone || ""}
+              </p>
+            </div>
           </div>
         </div>
 
