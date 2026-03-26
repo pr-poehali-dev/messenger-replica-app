@@ -1,10 +1,6 @@
-const BASE_URL = 'https://functions.poehali.dev/f6cae849-85b2-4c0b-8164-397266e688b3';
-const USER_ID = '1';
+import { authHeaders, CHATS_URL } from './authApi';
 
-const headers = {
-  'Content-Type': 'application/json',
-  'X-User-Id': USER_ID,
-};
+const BASE_URL = CHATS_URL;
 
 export interface ApiChat {
   id: number;
@@ -32,13 +28,15 @@ export interface ApiMessage {
 }
 
 export async function fetchChats(): Promise<ApiChat[]> {
-  const res = await fetch(`${BASE_URL}?action=chats`, { headers });
+  const res = await fetch(`${BASE_URL}?action=chats`, { headers: authHeaders() });
+  if (!res.ok) return [];
   const data = await res.json();
   return data.chats || [];
 }
 
 export async function fetchMessages(chatId: number): Promise<ApiMessage[]> {
-  const res = await fetch(`${BASE_URL}?action=messages&chat_id=${chatId}`, { headers });
+  const res = await fetch(`${BASE_URL}?action=messages&chat_id=${chatId}`, { headers: authHeaders() });
+  if (!res.ok) return [];
   const data = await res.json();
   return data.messages || [];
 }
@@ -46,7 +44,7 @@ export async function fetchMessages(chatId: number): Promise<ApiMessage[]> {
 export async function sendMessage(chatId: number, text: string): Promise<ApiMessage> {
   const res = await fetch(BASE_URL, {
     method: 'POST',
-    headers,
+    headers: authHeaders(),
     body: JSON.stringify({ action: 'send', chat_id: chatId, text }),
   });
   return res.json();

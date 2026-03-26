@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { fetchChats, fetchMessages, sendMessage, ApiChat, ApiMessage } from "@/api/chatApi";
+import { getMe, logout, getToken, AuthUser } from "@/api/authApi";
 import ChatList from "@/components/messenger/ChatList";
 import ChatWindow from "@/components/messenger/ChatWindow";
 import Sidebar from "@/components/messenger/Sidebar";
+import AuthScreen from "@/components/auth/AuthScreen";
 import { Chat, Message } from "@/data/mockData";
 
 function apiChatToChat(c: ApiChat, messages: Message[] = []): Chat {
@@ -34,27 +36,41 @@ function apiMsgToMsg(m: ApiMessage): Message {
 }
 
 export default function Index() {
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const [chatList, setChatList] = useState<Chat[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mobileView, setMobileView] = useState<"list" | "chat">("list");
-  const [loading, setLoading] = useState(true);
+  const [chatsLoading, setChatsLoading] = useState(false);
 
   const selectedChat = chatList.find((c) => c.id === selectedId) || null;
 
   useEffect(() => {
-    fetchChats()
-      .then((apiChats) => {
-        setChatList(apiChats.map((c) => apiChatToChat(c)));
-      })
-      .finally(() => setLoading(false));
+    if (!getToken()) {
+      setAuthChecked(true);
+      return;
+    }
+    getMe().then((u) => {
+      setUser(u);
+      setAuthChecked(true);
+    });
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    setChatsLoading(true);
+    fetchChats()
+      .then((apiChats) => setChatList(apiChats.map((c) => apiChatToChat(c))))
+      .finally(() => setChatsLoading(false));
+  }, [user]);
+
+  const handleAuth = (authedUser: AuthUser) => setUser(authedUser);
 
   const handleSelect = useCallback(async (id: number) => {
     setSelectedId(id);
     setMobileView("chat");
     setChatList((prev) => prev.map((c) => (c.id === id ? { ...c, unread: 0 } : c)));
-
     const apiMsgs = await fetchMessages(id);
     const messages = apiMsgs.map(apiMsgToMsg);
     setChatList((prev) => prev.map((c) => (c.id === id ? { ...c, messages } : c)));
@@ -88,7 +104,9 @@ export default function Index() {
           ? {
               ...c,
               messages: c.messages.map((m) =>
-                m.id === optimisticId ? { ...m, id: saved.id, time: saved.time, status: 'delivered' as const } : m
+                m.id === optimisticId
+                  ? { ...m, id: saved.id, time: saved.time, status: 'delivered' as const }
+                  : m
               ),
             }
           : c
@@ -96,20 +114,43 @@ export default function Index() {
     );
   }, []);
 
+  const handleLogout = async () => {
+    await logout();
+    setUser(null);
+    setChatList([]);
+    setSelectedId(null);
+    setSidebarOpen(false);
+  };
+
   const handleBack = () => {
     setMobileView("list");
     setSelectedId(null);
   };
 
-  if (loading) {
+  if (!authChecked) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center" style={{ background: "hsl(var(--chat-bg))" }}>
+        <div
+          className="w-12 h-12 rounded-full border-2 animate-spin"
+          style={{ borderColor: "var(--tg-blue)", borderTopColor: "transparent" }}
+        />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <AuthScreen onAuth={handleAuth} />;
+  }
+
+  if (chatsLoading) {
     return (
       <div className="flex h-screen w-screen items-center justify-center" style={{ background: "hsl(var(--chat-bg))" }}>
         <div className="flex flex-col items-center gap-3 text-[hsl(var(--muted-foreground))]">
           <div
-            className="w-12 h-12 rounded-full border-2 border-t-transparent animate-spin"
+            className="w-12 h-12 rounded-full border-2 animate-spin"
             style={{ borderColor: "var(--tg-blue)", borderTopColor: "transparent" }}
           />
-          <p className="text-sm">Загрузка...</p>
+          <p className="text-sm">Загрузка чатов...</p>
         </div>
       </div>
     );
@@ -117,9 +158,13 @@ export default function Index() {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden" style={{ background: "hsl(var(--chat-bg))" }}>
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        user={user}
+        onLogout={handleLogout}
+      />
 
-      {/* Desktop layout */}
       <div className="hidden md:flex w-full h-full">
         <ChatList
           chats={chatList}
@@ -127,13 +172,9 @@ export default function Index() {
           onSelect={handleSelect}
           onMenuOpen={() => setSidebarOpen(true)}
         />
-        <ChatWindow
-          chat={selectedChat}
-          onSendMessage={handleSendMessage}
-        />
+        <ChatWindow chat={selectedChat} onSendMessage={handleSendMessage} />
       </div>
 
-      {/* Mobile layout */}
       <div className="flex md:hidden w-full h-full">
         {mobileView === "list" && (
           <div className="w-full animate-fade-in">
@@ -147,11 +188,7 @@ export default function Index() {
         )}
         {mobileView === "chat" && (
           <div className="w-full animate-slide-in-right">
-            <ChatWindow
-              chat={selectedChat}
-              onSendMessage={handleSendMessage}
-              onBack={handleBack}
-            />
+            <ChatWindow chat={selectedChat} onSendMessage={handleSendMessage} onBack={handleBack} />
           </div>
         )}
       </div>

@@ -1,4 +1,4 @@
-"""API для работы с чатами: список чатов, сообщения, отправка"""
+"""API для работы с чатами: список чатов, сообщения, отправка. Авторизация по сессионному токену."""
 import json
 import os
 import psycopg2
@@ -7,11 +7,28 @@ from psycopg2.extras import RealDictCursor
 CORS = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-User-Id',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Session-Token',
 }
 
 def get_conn():
     return psycopg2.connect(os.environ['DATABASE_URL'])
+
+def json_resp(data, status=200):
+    return {
+        'statusCode': status,
+        'headers': {**CORS, 'Content-Type': 'application/json'},
+        'body': json.dumps(data, ensure_ascii=False)
+    }
+
+def get_user_id(cur, token: str):
+    if not token:
+        return None
+    cur.execute("""
+        SELECT user_id FROM sessions
+        WHERE token = %s AND expires_at > NOW()
+    """, (token,))
+    row = cur.fetchone()
+    return row['user_id'] if row else None
 
 def handler(event: dict, context) -> dict:
     """Обработчик: GET ?action=chats | GET ?action=messages&chat_id=N | POST {action,chat_id,text}"""
@@ -19,11 +36,16 @@ def handler(event: dict, context) -> dict:
         return {'statusCode': 200, 'headers': CORS, 'body': ''}
 
     method = event.get('httpMethod', 'GET')
-    user_id = int((event.get('headers') or {}).get('X-User-Id', '1') or '1')
+    token = (event.get('headers') or {}).get('X-Session-Token', '')
     qs = event.get('queryStringParameters') or {}
 
     conn = get_conn()
     cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    user_id = get_user_id(cur, token)
+    if not user_id:
+        conn.close()
+        return json_resp({'error': 'Не авторизован'}, 401)
 
     if method == 'GET':
         action = qs.get('action', 'chats')
@@ -61,11 +83,7 @@ def handler(event: dict, context) -> dict:
             """, (user_id, user_id, user_id))
             chats = [dict(r) for r in cur.fetchall()]
             conn.close()
-            return {
-                'statusCode': 200,
-                'headers': {**CORS, 'Content-Type': 'application/json'},
-                'body': json.dumps({'chats': chats})
-            }
+            return json_resp({'chats': chats})
 
         if action == 'messages':
             chat_id = int(qs.get('chat_id', 0))
@@ -88,11 +106,7 @@ def handler(event: dict, context) -> dict:
             """, (user_id, chat_id))
             msgs = [dict(r) for r in cur.fetchall()]
             conn.close()
-            return {
-                'statusCode': 200,
-                'headers': {**CORS, 'Content-Type': 'application/json'},
-                'body': json.dumps({'messages': msgs, 'chat_id': chat_id})
-            }
+            return json_resp({'messages': msgs, 'chat_id': chat_id})
 
     if method == 'POST':
         body = json.loads(event.get('body') or '{}')
@@ -103,7 +117,7 @@ def handler(event: dict, context) -> dict:
             text = (body.get('text') or '').strip()
             if not text or not chat_id:
                 conn.close()
-                return {'statusCode': 400, 'headers': CORS, 'body': json.dumps({'error': 'Пустое сообщение или chat_id'})}
+                return json_resp({'error': 'Пустое сообщение или chat_id'}, 400)
 
             cur.execute("""
                 INSERT INTO messages (chat_id, sender_id, text)
@@ -113,11 +127,7 @@ def handler(event: dict, context) -> dict:
             row = dict(cur.fetchone())
             conn.commit()
             conn.close()
-            return {
-                'statusCode': 200,
-                'headers': {**CORS, 'Content-Type': 'application/json'},
-                'body': json.dumps({'id': row['id'], 'time': row['time'], 'text': text, 'is_out': True})
-            }
+            return json_resp({'id': row['id'], 'time': row['time'], 'text': text, 'is_out': True})
 
     conn.close()
-    return {'statusCode': 404, 'headers': CORS, 'body': json.dumps({'error': 'Not found'})}
+    return json_resp({'error': 'Not found'}, 404)
