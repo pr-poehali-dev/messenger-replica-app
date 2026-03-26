@@ -43,7 +43,7 @@ export async function sendCode(phone: string): Promise<{ ok: boolean; demo_code?
   }
 }
 
-export async function verifyCode(phone: string, code: string, name?: string): Promise<{
+export async function verifyCode(phone: string, code: string, name?: string, username?: string): Promise<{
   ok: boolean;
   token?: string;
   user?: AuthUser;
@@ -54,7 +54,7 @@ export async function verifyCode(phone: string, code: string, name?: string): Pr
     const res = await fetch(AUTH_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'verify_code', phone, code, name }),
+      body: JSON.stringify({ action: 'verify_code', phone, code, name, username }),
     });
     return res.json();
   } catch {

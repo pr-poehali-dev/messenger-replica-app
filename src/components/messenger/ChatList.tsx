@@ -8,11 +8,12 @@ interface ChatListProps {
   selectedId: number | null;
   onSelect: (id: number) => void;
   onMenuOpen: () => void;
+  onNewChat: () => void;
 }
 
 const tabs = ["Все", "Личные", "Группы", "Каналы"];
 
-export default function ChatList({ chats, selectedId, onSelect, onMenuOpen }: ChatListProps) {
+export default function ChatList({ chats, selectedId, onSelect, onMenuOpen, onNewChat }: ChatListProps) {
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("Все");
 
@@ -43,7 +44,11 @@ export default function ChatList({ chats, selectedId, onSelect, onMenuOpen }: Ch
           <Icon name="Menu" size={20} />
         </button>
         <h1 className="flex-1 text-white font-semibold text-lg">Волна</h1>
-        <button className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors text-[hsl(var(--muted-foreground))] hover:text-white">
+        <button
+          onClick={onNewChat}
+          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors text-[hsl(var(--muted-foreground))] hover:text-white"
+          title="Новый чат"
+        >
           <Icon name="Edit" size={18} />
         </button>
       </div>

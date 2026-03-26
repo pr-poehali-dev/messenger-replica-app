@@ -1,0 +1,13 @@
+{
+  "tests": [
+    {
+      "name": "Search without auth returns 401",
+      "method": "GET",
+      "path": "/",
+      "queryStringParameters": {"action": "search", "q": "alex"},
+      "expectedStatus": 401,
+      "expectedBody": {"error": "Не авторизован"},
+      "bodyMatcher": "partial"
+    }
+  ]
+}
